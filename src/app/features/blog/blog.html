@@ -1,0 +1,21 @@
+<h2>Add Blog</h2>
+
+<input [(ngModel)]="newBlog.name" placeholder="Name" />
+<input [(ngModel)]="newBlog.age" type="number" placeholder="Age" />
+<input [(ngModel)]="newBlog.content" placeholder="Content" />
+
+<button (click)="addBlog()">Add</button>
+
+<hr>
+
+<h2>Blog List</h2>
+
+<div *ngFor="let blog of blogs">
+  <p>
+    <b>{{ blog.name }}</b> ({{ blog.age }})
+    <br>
+    {{ blog.content }}
+  </p>
+  <button (click)="deleteBlog(blog.id!)">Delete</button>
+  <hr>
+</div>
