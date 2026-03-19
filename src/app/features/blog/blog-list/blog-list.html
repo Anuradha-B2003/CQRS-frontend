@@ -1,0 +1,85 @@
+<h2>Blog List</h2>
+
+<button mat-raised-button color="primary" (click)="createBlog()">
+  Add Blog
+</button>
+<button mat-raised-button color="warn"
+  (click)="deleteSelected()"
+  [disabled]="selectedBlogs().length === 0">
+
+  Delete Selected
+
+</button>
+<button mat-raised-button color="primary" (click)="addNewBlog()">
+  Add Row
+</button>
+
+<button mat-raised-button color="accent" (click)="saveAll()">
+  Save All
+</button>
+
+<table mat-table [dataSource]="blogs()" class="mat-elevation-z8">
+    <ng-container matColumnDef="select">
+  <th mat-header-cell *matHeaderCellDef>Select</th>
+
+  <td mat-cell *matCellDef="let blog">
+
+    <mat-checkbox
+      [checked]="selectedBlogs().includes(blog.id)"
+      (change)="toggleSelection(blog.id!, $event)">
+    </mat-checkbox>
+
+  </td>
+</ng-container>
+
+  <!-- ID -->
+  <ng-container matColumnDef="id">
+    <th mat-header-cell *matHeaderCellDef> ID </th>
+    <td mat-cell *matCellDef="let element"> {{element.id}} </td>
+  </ng-container>
+
+  <!-- Name -->
+  <ng-container matColumnDef="name">
+  <th mat-header-cell *matHeaderCellDef> Name </th>
+  <td mat-cell *matCellDef="let element">
+    <input [(ngModel)]="element.name" (ngModelChange)="trackChange(element)" />
+  </td>
+  </ng-container>
+
+  <!-- Age -->
+  <ng-container matColumnDef="age">
+  <th mat-header-cell *matHeaderCellDef> Age </th>
+  <td mat-cell *matCellDef="let element">
+    <input [(ngModel)]="element.age" (ngModelChange)="trackChange(element)" />
+  </td>
+  </ng-container>
+
+  <!-- Content -->
+  <ng-container matColumnDef="content">
+  <th mat-header-cell *matHeaderCellDef> Content </th>
+  <td mat-cell *matCellDef="let element">
+    <input [(ngModel)]="element.content" (ngModelChange)="trackChange(element)" />
+  </td>
+</ng-container>
+
+  <!-- Actions -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef> Actions </th>
+    <td mat-cell *matCellDef="let element">
+
+      <button mat-icon-button (click)="editBlog(element)">
+        <mat-icon>edit</mat-icon>
+      </button>
+
+      <button mat-icon-button color="warn" (click)="deleteBlog(element.id!)">
+        <mat-icon>delete</mat-icon>
+      </button>
+
+    </td>
+  </ng-container>
+
+  <!-- HEADER + ROW -->
+  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+  <tr mat-row *matRowDef="let element; columns: displayedColumns;"></tr>
+
+</table>

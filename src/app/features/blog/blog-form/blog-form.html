@@ -1,0 +1,95 @@
+<div class="form-container">
+<mat-card class="blog-card">
+
+<h2>{{ isEditMode() ? 'Edit Blog' : 'Create Blog' }}</h2>
+<div *ngIf="hasUnsavedChanges()" style="margin-bottom:10px;">
+  <span style="color:#ff9800; font-weight:500;">
+    ● Unsaved Changes
+  </span>
+</div>
+<form #blogForm="ngForm" (ngSubmit)="saveBlog()">
+
+  <div class="row">
+
+    <!-- NAME -->
+    <mat-form-field appearance="outline" class="field"
+      [class.modified-field]="isFieldChanged('name')">
+      
+      <mat-label>Name</mat-label>
+
+      <input matInput name="name" required minlength="3"
+        [(ngModel)]="newBlog.name" #name="ngModel">
+
+      <mat-error *ngIf="name.errors?.['required']">
+        Name is required
+      </mat-error>
+
+      <mat-error *ngIf="name.errors?.['minlength']">
+        Minimum 3 characters required
+      </mat-error>
+
+    </mat-form-field>
+
+    <!-- AGE -->
+    <mat-form-field appearance="outline" class="field"
+      [class.modified-field]="isFieldChanged('age')">
+
+      <mat-label>Age</mat-label>
+
+      <input matInput type="number" name="age" required min="1" max="100"
+        [(ngModel)]="newBlog.age" #age="ngModel">
+
+      <mat-error *ngIf="age.errors?.['required']">
+        Age is required
+      </mat-error>
+
+      <mat-error *ngIf="age.errors?.['min']">
+        Must be greater than 0
+      </mat-error>
+
+      <mat-error *ngIf="age.errors?.['max']">
+        Must be less than 100
+      </mat-error>
+
+    </mat-form-field>
+
+  </div>
+
+  <!-- CONTENT -->
+  <mat-form-field appearance="outline" class="field full-width"
+    [class.modified-field]="isFieldChanged('content')">
+
+    <mat-label>Content</mat-label>
+
+    <textarea matInput name="content" required
+      [(ngModel)]="newBlog.content" #content="ngModel">
+    </textarea>
+
+    <mat-error *ngIf="content.invalid && content.touched">
+      Content is required
+    </mat-error>
+
+  </mat-form-field>
+
+  <!-- BUTTONS -->
+  <div class="button-group">
+
+    <button mat-raised-button
+      [color]="isEditMode() ? 'accent' : 'primary'"
+      type="submit"
+      [disabled]="blogForm.invalid || (isEditMode() && !hasUnsavedChanges())">
+
+      {{ isEditMode() ? 'Update Blog' : 'Save Blog' }}
+
+    </button>
+
+    <button mat-button type="button" (click)="goBack()">
+      Cancel
+    </button>
+
+  </div>
+
+</form>
+
+</mat-card>
+</div>

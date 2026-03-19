@@ -1,21 +1,165 @@
-<h2>Add Blog</h2>
+<div class="form-container">
+<mat-card class="blog-card">
+<h2>Create Blog</h2>
+<form #blogForm="ngForm" (ngSubmit)="saveBlog(blogForm)">
+  <div class="row">
+<mat-form-field appearance="outline" floatLabel="always" class="field" [class.modified-field]="isFieldChanged('name')">
+  <mat-label>Name</mat-label>
 
-<input [(ngModel)]="newBlog.name" placeholder="Name" />
-<input [(ngModel)]="newBlog.age" type="number" placeholder="Age" />
-<input [(ngModel)]="newBlog.content" placeholder="Content" />
+  <input
+    matInput
+    name="name"
+    required
+    minlength="3"
+    [(ngModel)]="newBlog.name"
+    #name="ngModel">
 
-<button (click)="addBlog()">Add</button>
+  <mat-error *ngIf="name.errors?.['required']">
+    Name is required
+  </mat-error>
+  <mat-error *ngIf="name.errors?.['minlength']">
+    Name must be atleast 3characters long
+  </mat-error>
 
-<hr>
+</mat-form-field>
 
+
+<mat-form-field appearance="outline" class="field" floatLabel="always" [class.modified-field]="isFieldChanged('age')">
+  <mat-label>Age</mat-label>
+
+  <input
+    matInput
+    type="number"
+    name="age"
+    required
+    min="1"
+    max="100"
+    [(ngModel)]="newBlog.age"
+    #age="ngModel">
+
+  <mat-error *ngIf="age.errors?.['required']">
+    Age is required
+  </mat-error>
+
+  <mat-error *ngIf="age.errors?.['min']">
+    Age must be greater than 0
+  </mat-error>
+  <mat-error *ngIf="age.errors?.['max']">
+    Age must be less than 100
+    </mat-error>
+    
+
+</mat-form-field>
+</div>
+
+
+<mat-form-field appearance="outline" floatLabel="always" class="field full-width" [class.modified-field]="isFieldChanged('content')">
+  <mat-label>Content</mat-label>
+
+  <textarea
+    matInput
+    name="content"
+    required
+    [(ngModel)]="newBlog.content"
+    #content="ngModel">
+  </textarea>
+
+  <mat-error *ngIf="content.invalid && content.touched">
+    Content is required
+  </mat-error>
+
+</mat-form-field>
+
+<div class="button-group">
+
+
+<button
+mat-raised-button
+[color]="isEditMode() ? 'accent' : 'primary'"
+type="submit"
+[disabled]="blogForm.invalid || (isEditMode() && !hasUnsavedChanges())">
+
+{{ isEditMode() ? 'Update Blog' : 'Save Blog' }}
+
+</button>
+
+<!-- <button mat-raised-button color="warn" (click)="deleteBlog(newBlog.id!)">
+Delete
+</button> -->
+<button mat-raised-button color="warn" type="button"
+(click)="deleteSelected()"
+[disabled]="selectedBlogs().length === 0">
+
+Delete Selected
+
+</button>
+
+</div>
+</form>
+
+
+</mat-card>
 <h2>Blog List</h2>
+<mat-card style="margin-top:20px">
 
-<div *ngFor="let blog of blogs">
-  <p>
-    <b>{{ blog.name }}</b> ({{ blog.age }})
-    <br>
-    {{ blog.content }}
-  </p>
-  <button (click)="deleteBlog(blog.id!)">Delete</button>
-  <hr>
+<table mat-table [dataSource]="blogs()" class="mat-elevation-z8">
+
+  <ng-container matColumnDef="select">
+  <th mat-header-cell *matHeaderCellDef>Select</th>
+  <td mat-cell *matCellDef="let blog">
+
+    <mat-checkbox
+    [checked]="selectedBlogs().includes(blog.id)"
+      (change)="toggleSelection(blog.id!, $event)">
+    </mat-checkbox>
+
+  </td>
+</ng-container>
+
+  <!-- ID Column -->
+  <ng-container matColumnDef="id">
+    <th mat-header-cell *matHeaderCellDef> ID </th>
+    <td mat-cell *matCellDef="let blog"> {{blog.id}} </td>
+  </ng-container>
+
+  <!-- Name Column -->
+  <ng-container matColumnDef="name">
+    <th mat-header-cell *matHeaderCellDef> Name </th>
+    <td mat-cell *matCellDef="let blog"> {{blog.name}} </td>
+  </ng-container>
+
+  <!-- Age Column -->
+  <ng-container matColumnDef="age">
+    <th mat-header-cell *matHeaderCellDef> Age </th>
+    <td mat-cell *matCellDef="let blog"> {{blog.age}} </td>
+  </ng-container>
+
+  <!-- Content Column -->
+  <ng-container matColumnDef="content">
+    <th mat-header-cell *matHeaderCellDef> Content </th>
+    <td mat-cell *matCellDef="let blog"> {{blog.content}} </td>
+  </ng-container>
+
+  <!-- Actions Column -->
+  <ng-container matColumnDef="actions">
+    <th mat-header-cell *matHeaderCellDef> Actions </th>
+    <td mat-cell *matCellDef="let blog">
+
+      <button mat-icon-button color="primary" (click)="editBlog(blog)">
+        <mat-icon>edit</mat-icon>
+      </button>
+
+      <button mat-icon-button color="warn" (click)="deleteBlog(blog.id!)">
+        <mat-icon>delete</mat-icon>
+      </button>
+
+    </td>
+  </ng-container>
+
+  <tr mat-header-row *matHeaderRowDef="displayedColumns; sticky:true"></tr>
+  <tr mat-row *matRowDef="let row; columns: displayedColumns;"
+  [class.editing-row]=" row.id == editingBlogId() "></tr>
+
+</table>
+</mat-card>
 </div>

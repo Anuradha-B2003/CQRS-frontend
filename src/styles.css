@@ -1,1 +1,56 @@
 /* You can add global styles to this file, and also import other style files */
+tr.editing-row td {
+  background-color: #e3f2fd !important;
+}
+tr.editing-row td:first-child {
+  border-left: 4px solid #1976d2;
+}
+.modified-field .mat-mdc-text-field-wrapper {
+  background-color: #fff3cd;
+}
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+
+.field {
+  flex: 1;
+}
+
+.full-width {
+  width: 100%;
+}
+.button-group {
+  margin-top: 10px;
+  display: flex;
+  gap: 12px;
+}
+mat-card {
+  padding: 20px;
+  border-radius: 10px;
+}
+table {
+  width: 100%;
+}
+
+mat-header-cell {
+  font-weight: 600;
+}
+
+mat-row:hover {
+  background: #f5f5f5;
+}
+.blog-card{
+  padding:20px;
+  max-width:700px;
+}
+.mat-mdc-row:hover{
+  background-color: #f5f5f5;
+  cursor: pointer;
+}

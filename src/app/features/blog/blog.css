@@ -1,0 +1,33 @@
+.container{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+
+.blog-card{
+  width:400px;
+  padding:20px;
+}
+
+.full-width{
+  width:100%;
+  margin-bottom:15px;
+}
+
+.button-group{
+  display:flex;
+  gap:10px;
+}
+::ng-deep .editing-row .mat-mdc-cell {
+  background-color: yellow !important;
+}
+
+table {
+  width: 100%;
+}
+
+mat-card {
+  max-width: 800px;
+  margin: auto;
+}

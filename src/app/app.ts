@@ -11,14 +11,24 @@
 //   protected readonly title = signal('blog-ui');
 // }
 
+// import { Component } from '@angular/core';
+// import { BlogComponent } from './features/blog/blog';
+
+// @Component({
+//   selector: 'app-root',
+//   standalone: true,
+//   imports: [BlogComponent],
+//   template: '<app-blog></app-blog>'
+// })
+// export class App {}
 import { Component } from '@angular/core';
-import { BlogComponent } from './features/blog/blog';
+import { RouterOutlet } from '@angular/router';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [BlogComponent],
-  template: '<app-blog></app-blog>'
+  imports: [RouterOutlet],
+  template: `<router-outlet></router-outlet>`
 })
 export class App {}
 
