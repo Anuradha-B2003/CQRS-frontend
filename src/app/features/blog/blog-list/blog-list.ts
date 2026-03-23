@@ -2,123 +2,92 @@ import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BlogService, Blog } from '../../../services/blog.service';
 import { CommonModule } from '@angular/common';
+import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
+import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { ConfirmDialog } from '../confirm-dialog';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import {Router} from '@angular/router';
-import { bindCallback } from 'rxjs';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-blog-list',
   standalone: true,
   imports: [CommonModule, FormsModule, MatTableModule, MatIconModule, 
-    MatButtonModule,MatCheckboxModule,MatDialogModule,MatSnackBarModule],
+    MatButtonModule,MatCheckboxModule,MatDialogModule,MatSnackBarModule,
+    MatCardModule,MatFormFieldModule,MatInputModule,MatSidenavModule],
   templateUrl: './blog-list.html',
   styleUrls: ['./blog-list.css']
 })
 export class BlogListComponent implements OnInit {
   blogs=signal<Blog[]>([]);
   loading=signal(false);
-  displayedColumns: string[] = ['select','id', 'name', 'age', 'content', 'actions'];
+  displayedColumns: string[] = ['select', 'id', 'name', 'age', 'content', 'actions'];
   selectedBlogs=signal<number[]>([]);
-  pendingChanges = signal<Blog[]>([]);
+  pendingChanges = signal<{ type: 'create' | 'update' | 'delete', blog: Blog }[]>([]);
+
+  selectedBlog = signal<Blog | null>(null);
+  isFormOpen = signal(false);
+
 
   constructor(private blogService: BlogService,
       private dialog: MatDialog,
-      private snackBar: MatSnackBar,
-      private router: Router
+      private snackBar: MatSnackBar
   ) {}
-//  ngOnInit(): void {
 
-//   const nav = this.router.getCurrentNavigation();
-//   const state = nav?.extras?.state as any;
 
-//   if (state?.blog) {
-
-//     this.loadBlogs(() => {
-//       this.applyLocalChange(state.blog, state.isEdit);
-//     });
-
-//   } else {
-//     this.loadBlogs();
-//   }
-// }
 ngOnInit() {
-
-  this.loadBlogs(); // load backend first
-
-  const stateBlogs:Blog[] = history.state?.blogs || [];
-
-  if (stateBlogs?.length) {
-
-    setTimeout(() => {
-
-      const existing = this.blogs();
-
-      const merged = [...existing];
-
-      stateBlogs.forEach((newBlog) => {
-        const index = merged.findIndex(b => b.id === newBlog.id);
-
-        if (index > -1) {
-          merged[index] = newBlog;
-        } else {
-          merged.push(newBlog);
-        }
-      });
-
-      this.blogs.set(merged);
-
-      this.pendingChanges.set([
-        ...this.pendingChanges(),
-        ...stateBlogs
-      ]);
-
-    });
+    this.loadBlogs();
   }
-}
-//   loadBlogs(callback?: () => void) {
-//     this.loading.set(true);
-//   this.blogService.getAll().subscribe(response => {
-//   this.blogs.set(response.data); 
-//   this.loading.set(false);
-//   if(callback) callback();
-//   });
-// }
+
 loadBlogs() {
   this.loading.set(true);
 
   this.blogService.getAll().subscribe(response => {
-
+  console.log("API Response:", response);
     const backendBlogs = response.data;
+    const localNewBlogs = this.pendingChanges()
+  .filter(x => x.type !== 'delete' && (!x.blog.id || x.blog.id < 0))
+  .map(x => x.blog);
 
-    const localNewBlogs = this.pendingChanges().filter(b => !b.id || b.id < 0);
+const updatedBlogs = backendBlogs.map(b => {
+  const local = this.pendingChanges()
+    .find(x => x.type !== 'delete' && x.blog.id === b.id);
 
-    const updatedBlogs = backendBlogs.map(b => {
-      const local = this.pendingChanges().find(x => x.id === b.id);
-      return local ? local : b;
-    });
+  return local ? local.blog : b;
+});
 
     this.blogs.set([
-      ...updatedBlogs,
-      ...localNewBlogs
-    ]);
+      ...localNewBlogs,
+      ...updatedBlogs
+    ].sort((a, b) => (b.id ?? 0) - (a.id ?? 0)));
 
     this.loading.set(false);
   });
 }
-editBlog(blog: Blog){
-  this.router.navigate(['/blog/edit', blog.id]);
-}
-createBlog(){
-  this.router.navigate(['/blog/create']);
-}
-deleteBlog(id: number) {
 
+createBlog() {
+  this.selectedBlog.set({
+    id: Date.now() * -1,
+    name: '',
+    age: 0,
+    content: ''
+  });
+
+  this.isFormOpen.set(true);
+}
+
+editBlog(blog: Blog) {
+  this.selectedBlog.set({ ...blog });
+  this.isFormOpen.set(true);
+}
+
+deleteBlog(id: number) {
   const dialogRef = this.dialog.open(ConfirmDialog,{
     width: '350px',
     data:{
@@ -127,28 +96,27 @@ deleteBlog(id: number) {
       confirmText: 'Delete',
       confirmColor:'warn'
     }
-});
+  });
 
   dialogRef.afterClosed().subscribe(result => {
     if(result){
-      this.blogService.delete(id).subscribe(response => {
 
-        if(response.success){
+      this.blogs.set(this.blogs().filter(b => b.id !== id));
 
-          this.snackBar.open("Blog Deleted", "Close", {
-            duration: 3000
-          });
+      const blog = { id } as Blog;
 
-          this.loadBlogs();
+      const updatedPending = this.pendingChanges().filter(x => x.blog.id !== id);
 
-        }
+      this.pendingChanges.set([
+        ...updatedPending,
+        { type: 'delete', blog }
+      ]);
 
+      this.snackBar.open("Marked for deletion", "Close", {
+        duration: 3000
       });
-
     }
-
   });
-
 }
 toggleSelection(id: number, event: any) {
   const ids=this.selectedBlogs();
@@ -162,132 +130,173 @@ toggleSelection(id: number, event: any) {
 
 }
 deleteSelected(){
-
   const dialogRef = this.dialog.open(ConfirmDialog,{
     width: '350px',
     data:{
-      title: 'Delete Blog',
-      message: 'Are you sure you want to delete this blog?',
+      title: 'Delete Blogs',
+      message: 'Are you sure you want to delete selected blogs?',
       confirmText: 'Delete',
       confirmColor:'warn'
     }
-});
+  });
 
   dialogRef.afterClosed().subscribe(result => {
 
     if(result){
 
-      this.blogService.bulkDelete(this.selectedBlogs()).subscribe(response => {
+      const ids = this.selectedBlogs();
 
-        if(response.success){
+      this.blogs.set(this.blogs().filter(b => !ids.includes(b.id!)));
 
-          this.snackBar.open("Selected Blogs Deleted", "Close", {
-            duration: 3000
-          });
+      const updatedPending = this.pendingChanges().filter(
+        x => !ids.includes(x.blog.id!)
+      );
 
-          this.loadBlogs();
-          this.selectedBlogs.set([]);
+      const deleteOps = ids.map(id => ({
+        type: 'delete' as const,
+        blog: { id } as Blog
+      }));
 
-        }
+      this.pendingChanges.set([
+        ...updatedPending,
+        ...deleteOps
+      ]);
 
-      });
-
-    }else{
-      this.snackBar.open("Deletion Cancelled", "Close", {
+      this.snackBar.open("Marked for deletion", "Close", {
         duration: 3000
       });
+
+      this.selectedBlogs.set([]);
     }
-    this.selectedBlogs.set([]);
-
   });
-
-}
-trackChange(blog: Blog) {
-  const changes = this.pendingChanges();
-
-  const index = changes.findIndex(x => x.id === blog.id);
-
-  if (index > -1) {
-    const updated = [...changes];
-    updated[index] = { ...blog };
-    this.pendingChanges.set(updated);
-  } else {
-    this.pendingChanges.set([...changes, { ...blog }]);
-  }
-}
-addNewBlog() {
-  const newBlog: Blog = {
-    id: 0,
-    name: '',
-    age: 0,
-    content: ''
-  };
-
-  this.blogs.set([...this.blogs(), newBlog]);
-  this.pendingChanges.set([...this.pendingChanges(), newBlog]);
 }
 saveAll() {
+  if (this.loading()) return;
+
+  this.loading.set(true);
+
   const changes = this.pendingChanges();
 
   if (changes.length === 0) {
     this.snackBar.open("No changes to save", "Close", { duration: 2000 });
+    this.loading.set(false);
     return;
   }
-  const payload = changes.map(blog => ({
-    id: blog.id && blog.id > 0 ? blog.id : 0, 
-    name: blog.name,
-    age: blog.age,
-    content: blog.content
-  }));
 
-  console.log("Sending payload:", payload); // debug
+  const upserts = changes
+    .filter(x => x.type !== 'delete')
+    .map(x => ({
+      ...x.blog,
+      id: x.blog.id! < 0 ? 0 : x.blog.id
+    }));
 
-  this.blogService.bulkUpsert(payload).subscribe({
-    next: (res) => {
-      if (res.success) {
-        this.snackBar.open("Saved Successfully", "Close", { duration: 3000 });
+  const deletes = changes
+    .filter(x => x.type === 'delete')
+    .map(x => x.blog.id)
+    .filter((id: number | undefined): id is number => id !== undefined);
 
-        this.pendingChanges.set([]);
-        this.loadBlogs();
-      } else {
-        this.snackBar.open(res.message || "Something went wrong", "Close", {
-          duration: 3000
-        });
-      }
-    },
-    error: (err) => {
-      console.error(err);
-      this.snackBar.open("Server error", "Close", { duration: 3000 });
-    }
+  const calls = [];
+
+  if (upserts.length > 0) {
+    calls.push(this.blogService.bulkUpsert(upserts));
+  }
+
+  if (deletes.length > 0) {
+    calls.push(this.blogService.bulkDelete(deletes));
+  }
+
+  forkJoin(calls).subscribe(() => {
+    this.snackBar.open("All changes saved", "Close", { duration: 3000 });
+
+    this.pendingChanges.set([]);
+    this.loadBlogs();
+    this.loading.set(false);
   });
 }
-applyLocalChange(blog: Blog, isEdit: boolean) {
 
-  const current = this.blogs();
+saveLocal() {
+  const blog = this.selectedBlog();
+  if (!blog) return;
 
-  if (isEdit) {
-    const updated = current.map(b => 
-      b.id === blog.id ? { ...blog } : b
+  const exists = this.blogs().some(b => b.id === blog.id!);
+
+  if (exists) {
+    this.blogs.set(
+      this.blogs().map(b => b.id === blog.id ? blog : b)
     );
-
-    this.blogs.set(updated);
   } else {
-    this.blogs.set([blog, ...current]);
+    this.blogs.set([blog, ...this.blogs()]);
   }
 
-  const changes = this.pendingChanges();
-  const index = changes.findIndex(x => x.id === blog.id);
+  const updatedPending = this.pendingChanges().filter(x => x.blog.id !== blog.id);
 
-  if (index > -1) {
-    changes[index] = blog;
-    this.pendingChanges.set([...changes]);
-  } else {
-    this.pendingChanges.set([...changes, blog]);
+const type = blog.id! < 0 ? 'create' : 'update';
+
+this.pendingChanges.set([
+  ...updatedPending,
+  { type, blog }
+]);
+
+  this.snackBar.open("Saved locally", "Close", { duration: 2000 });
+  this.selectedBlog.set(null);
+  this.isFormOpen.set(false);
+}
+isFieldChanged(field: keyof Blog): boolean {
+  const blog = this.selectedBlog();
+
+  if (!blog) return false;
+
+  const original = this.blogs().find(b => b.id === blog.id);
+
+  if (!original) return false;
+
+  return blog[field] !== original[field];
+}
+hasUnsavedChanges(): boolean {
+  const blog = this.selectedBlog();
+  if (!blog) return false;
+
+  const original = this.blogs().find(b => b.id === blog.id);
+
+  if (!original) {
+    return (
+      blog.name.trim() !== '' ||
+      blog.age !== 0 ||
+      blog.content.trim() !== ''
+    );
   }
-  this.snackBar.open("Change saved locally", "Close", {
-    duration: 3000
+
+  return (
+    blog.name.trim() !== original.name.trim() ||
+    blog.age !== original.age ||
+    blog.content.trim() !== original.content.trim()
+  );
+}
+closeForm() {
+  this.selectedBlog.set(null);
+  this.isFormOpen.set(false);
+}
+onCancel() {
+  if (!this.hasUnsavedChanges()) {
+    this.closeForm();
+    return;
+  }
+
+  const dialogRef = this.dialog.open(ConfirmDialog, {
+    width: '350px',
+    data: {
+      title: 'Unsaved Changes',
+      message: 'You have unsaved changes. Are you sure you want to discard them?',
+      confirmText: 'Discard',
+      confirmColor: 'warn'
+    }
   });
-  console.log("Applying change:", blog, isEdit);
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result) {
+      this.closeForm();
+    }
+  });
 }
 
 }

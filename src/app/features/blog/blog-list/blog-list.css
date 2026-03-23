@@ -1,0 +1,30 @@
+.container {
+  height: 100vh;
+}
+
+.drawer {
+  width: 350px;
+  padding: 20px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.new-badge {
+  background-color: #4caf50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-left: 6px;
+}
+.edited-badge {
+  color: white;
+  background-color: orange;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  margin-left: 6px;
+}
